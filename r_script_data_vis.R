@@ -26,13 +26,21 @@ autoimmune.df.clean <- autoimmune.df |>
     Sickness_Duration_Months,
     ANA,
     C3,
-    C4,
     Low.grade.fever,
     Fatigue.or.chronic.tiredness,
     Rashes.and.skin.lesions,
     General..unwell..feeling,
     Joint.pain
   )
+
+#remove duplicate id (femal ID 20??) WHY IS THERE STILL DUPLICATES IN FEMALE
+
+autoimmune.df.clean <- autoimmune.df.clean |>
+  distinct(Patient_ID, .keep_all = TRUE)
+
+#check to see if duplicates are gone
+
+anyDuplicated(autoimmune.df.clean$Patient_ID)
 
 #check to see if df is in integer (it's not)
 
@@ -55,8 +63,8 @@ symptoms <- c(
 autoimmune.df.clean <- autoimmune.df.clean |>
   mutate(
     across(
-      c(Patient_ID, Age, Gender, Sickness_Duration_Months,
-        ANA, C3, C4, Low.grade.fever,
+      c(Patient_ID, Age, Sickness_Duration_Months,
+        ANA, C3, Low.grade.fever,
         Fatigue.or.chronic.tiredness,
         Rashes.and.skin.lesions,
         General..unwell..feeling,
@@ -70,9 +78,6 @@ autoimmune.df.clean <- autoimmune.df.clean |>
 sapply(autoimmune.df.clean, is.integer)
 all(sapply(autoimmune.df.clean, is.integer))
 
-#ok, now Gender is NA.... take the original gender column back from autoimmune.df
-
-autoimmune.df.clean$Gender <- autoimmune.df$Gender
 
 #filter only Female participants
 
@@ -91,11 +96,8 @@ female.percentage.df <- female.autoimmune.df |>
   summarise(
     ANA_Negative = mean(ANA == 0) * 100, 
     C3_Negative = mean(C3 == 0) * 100, 
-    C4_Negative = mean(C4 == 0) * 100,
-    All_Three_Negative = mean(ANA == 0 &
-                              C3 == 0 &
-                              C4 == 0) *100)
-
+    Both_Negative = mean(ANA == 0 &
+                         C3 == 0) *100)
 
 # Find percentage of ANA, C3, C4 negative in male and all three negative 
 # and save as percentage df
@@ -104,10 +106,8 @@ male.percentage.df <- male.autoimmune.df |>
   summarise(
     ANA_Negative = mean(ANA == 0) * 100, 
     C3_Negative = mean(C3 == 0) * 100, 
-    C4_Negative = mean(C4 == 0) * 100,
-    All_Three_Negative = mean(ANA == 0 &
-                                  C3 == 0 &
-                                  C4 == 0)* 100)
+    Both_Negative = mean(ANA == 0 &
+                           C3 == 0) *100)
 
 # create a serology comparison table for both men and women (with N, mean age, mean duration)
 # and percentages of negative for ANA, C3, C4,and all three 
@@ -143,39 +143,155 @@ serology.comparison.df <- serology.comparison.df |>
     Mean_Duration, 
     .before = ANA_Negative
   )
-
-#create serology.long.df for ggplot to use and save seperate from serology.comparison.df
+#create serology.long.df and all.neg.long.df for ggplot to use and save seperate from serology.comparison.df
 
 serology.long <- serology.comparison.df |>
   pivot_longer(
     cols = c(
       ANA_Negative,
       C3_Negative,
-      C4_Negative,
-      All_Three_Negative,
     ),
     names_to = "Marker",
     values_to = "Percent"
   )
 
-#Create new pryamid chart to show age range acorss both genders 
+#create a df with depicting symptomology female participants who are all three negative
+#take female.autoimmune.df and filter rows based on neg for all three
+
+female.neg.w.symptom <- female.autoimmune.df |>
+  filter(
+    ANA == 0, 
+    C3 == 0
+  )
+
+#add symptom count column to female.neg.w.symptom data frame
+
+female.neg.w.symptom <- female.neg.w.symptom |>
+  mutate(
+    Symptom_Count = 
+      Fatigue.or.chronic.tiredness + 
+      Rashes.and.skin.lesions + 
+      Joint.pain + 
+      Low.grade.fever + 
+      General..unwell..feeling)
+
+#Create distribution chart to show age range acorss both genders 
 #use autoimmune.clean.df because it has individual ages
+#center title using plot.title
 
-demographic.pryamid.df <- autoimmune.df.clean
+ggplot(
+  autoimmune.df.clean,
+  aes(
+    x = Age,
+    fill = Gender
+  )
+) +
+  geom_histogram(
+    alpha = 0.4,
+    position = "identity",
+    bins = 30
+  ) +
+  labs(
+    title = "Age Distribution by Gender",
+    x = "Age (Years)",
+    y = "Number of Participants"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold"
+    )
+  )
+
+ggplot(
+  autoimmune.df.clean,
+  aes(
+    x = Age,
+    fill = Gender
+  )
+) +
+  geom_histogram(bins = 30) +
+  facet_wrap(~ Gender) +
+  labs(
+    title = "Age Distribution by Gender",
+    x = "Age (Years)",
+    y = "Number of Participants"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "none"
+  )
+
+#Create graph for sex serelogical differences (ANA, C3, seperately)
+
+ggplot(serology.long,
+       aes(x = Marker,
+           y = Percent,
+           fill = Gender)
+       )+
+  geom_col(position = "dodge")+
+    labs(
+      title = "Serologic Negativity by Gender",
+      x = "Serologic Marker",
+      y = "Percent Negative (%)") +
+  theme_minimal()+
+  theme(plot.title = element_text(
+    hjust = 0.5, 
+    face = "bold")
+  )
   
 
-#Create graph for sex serelogical differences (ANA, C3, C4 seperately)
- 
-#Create graph for sex serelogical differences (ALl negative) 
-  
-#Create graph for those with all negative, yet symptomological positives
+#Create df and graph for sex serelogical differences (ALl negative) 
 
-    
-# Create a Venn Diagram
+comp.neg.df <- serology.comparison.df |>
+  select(
+    Gender,
+    Both_Negative
+  )
 
+ggplot(
+  comp.neg.df,
+  aes(
+  x = Gender,
+  y = Both_Negative,
+  fill = Gender
+  )
+) +
+  geom_col() +
+  geom_text(
+    aes(label = round(Both_Negative, 1)),
+    vjust = -0.5
+  ) +
+  labs(
+    title = "Complete Seronegativity by Gender",
+    x = "Gender",
+    y = "Percent Negative for ANA and C3"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold"
+    )
+  )
 
-  
-  
+#Create violin graph for females with both negative, yet symptomological positives
+
+ggplot(
+  female.neg.w.symptom,
+  aes(
+    x = "",
+    y = Symptom_Count
+  )
+)+
+  geom_violin(fill = "steelblue", alpha = 0.6)+
+  labs(
+    title = "Symptom Burden Among ANA and C3 Seronegative Females",
+    y = "Number of Symptoms",
+    x = NULL) +
+    theme_minimal()
   
 
 
