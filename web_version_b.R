@@ -1,4 +1,3 @@
-
 #Receall Packages
 library (ggplot2)
 library(psych)
@@ -12,7 +11,7 @@ library(tidyr)
 #Find the data file and read it
 read_csv("./autoimmune.csv")
 
-# Assign the data a df name (raw version)
+#Assign the data a df name (raw version)
 autoimmune.df <- read.csv("./autoimmune.csv")
 
 #Create a 'clean' copy to work in and select ANA status, gender, age, participant ID, sickness duration, low.grade.fever, 
@@ -33,7 +32,7 @@ autoimmune.df.clean <- autoimmune.df |>
     Joint.pain
   )
 
-#remove duplicate id (femal ID 20??) WHY IS THERE STILL DUPLICATES IN FEMALE
+#remove duplicate ids
 
 autoimmune.df.clean <- autoimmune.df.clean |>
   distinct(Patient_ID, .keep_all = TRUE)
@@ -47,7 +46,7 @@ anyDuplicated(autoimmune.df.clean$Patient_ID)
 is.integer(autoimmune.df.clean)
 typeof(autoimmune.df.clean)
 
-#save all symptoms as 'symptom' object to use later
+#save all symptoms as 'symptom' object to use later? potentially?
 
 symptoms <- c(
   "ANA",
@@ -58,7 +57,7 @@ symptoms <- c(
   "Joint.pain"
 )
 
-#Coerce data frame values from list to integers 
+#Coerce data frame values from list to integers, excluding Gender
 
 autoimmune.df.clean <- autoimmune.df.clean |>
   mutate(
@@ -73,24 +72,18 @@ autoimmune.df.clean <- autoimmune.df.clean |>
     )
   )
 
-#Check is all columns in autoimmune.df.clean are indeed integer
-
-sapply(autoimmune.df.clean, is.integer)
-all(sapply(autoimmune.df.clean, is.integer))
-
-
 #filter only Female participants
 
 female.autoimmune.df <- autoimmune.df.clean |>
   filter(Gender == "Female")
 
-#filter only meale participants
+#filter only male participants
 
 male.autoimmune.df <- autoimmune.df.clean |>
   filter(Gender == "Male")
 
-# Find percentage of ANA, C3, C4 Negative and all three negative
-#in Female sample and save as percentage df
+# Find percentage of ANA, C3, negative and both negative
+#in Female sample and save as female.percentage.df
 
 female.percentage.df <- female.autoimmune.df |>
   summarise(
@@ -99,8 +92,8 @@ female.percentage.df <- female.autoimmune.df |>
     Both_Negative = mean(ANA == 0 &
                          C3 == 0) *100)
 
-# Find percentage of ANA, C3, C4 negative in male and all three negative 
-# and save as percentage df
+#Find percentage of ANA, C3 negative in male and both
+#and save as percentage df
 
 male.percentage.df <- male.autoimmune.df |>
   summarise(
@@ -110,7 +103,7 @@ male.percentage.df <- male.autoimmune.df |>
                            C3 == 0) *100)
 
 # create a serology comparison table for both men and women (with N, mean age, mean duration)
-# and percentages of negative for ANA, C3, C4,and all three 
+# and percentages of negative for ANA, C3, and both
 
 serology.comparison.df <- bind_rows(
   Female = female.percentage.df,
@@ -143,7 +136,8 @@ serology.comparison.df <- serology.comparison.df |>
     Mean_Duration, 
     .before = ANA_Negative
   )
-#create serology.long.df and all.neg.long.df for ggplot to use and save seperate from serology.comparison.df
+#create serology.long.df and all.neg.long.df for ggplot to use 
+#and save seperate from serology.comparison.df
 
 serology.long <- serology.comparison.df |>
   pivot_longer(
@@ -155,8 +149,8 @@ serology.long <- serology.comparison.df |>
     values_to = "Percent"
   )
 
-#create a df with depicting symptomology female participants who are all three negative
-#take female.autoimmune.df and filter rows based on neg for all three
+#create a df with depicting symptomology for female participants who are both negative
+#take female.autoimmune.df and filter rows based on neg for both
 
 female.neg.w.symptom <- female.autoimmune.df |>
   filter(
@@ -164,7 +158,7 @@ female.neg.w.symptom <- female.autoimmune.df |>
     C3 == 0
   )
 
-#add symptom count column to female.neg.w.symptom data frame
+#add a symptom count column to female.neg.w.symptom data frame
 
 female.neg.w.symptom <- female.neg.w.symptom |>
   mutate(
@@ -175,34 +169,10 @@ female.neg.w.symptom <- female.neg.w.symptom |>
       Low.grade.fever + 
       General..unwell..feeling)
 
-#Create distribution chart to show age range acorss both genders 
+#Create distribution chart to show age range across both genders 
 #use autoimmune.clean.df because it has individual ages
 #center title using plot.title
 
-ggplot(
-  autoimmune.df.clean,
-  aes(
-    x = Age,
-    fill = Gender
-  )
-) +
-  geom_histogram(
-    alpha = 0.4,
-    position = "identity",
-    bins = 30
-  ) +
-  labs(
-    title = "Age Distribution by Gender",
-    x = "Age (Years)",
-    y = "Number of Participants"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(
-      hjust = 0.5,
-      face = "bold"
-    )
-  )
 
 ggplot(
   autoimmune.df.clean,
@@ -213,36 +183,82 @@ ggplot(
 ) +
   geom_histogram(bins = 30) +
   facet_wrap(~ Gender) +
+  scale_fill_manual(
+    values = c(
+      "Male" = "olivedrab3",
+      "Female" = "plum3"
+    )
+  ) +
+  scale_x_continuous(
+    breaks = seq(0, 100, by = 10)
+  )+
   labs(
-    title = "Age Distribution by Gender",
-    x = "Age (Years)",
+    title = "Ages of Participants",
+    x = "Age (in Years)",
     y = "Number of Participants"
   ) +
   theme_minimal() +
   theme(
-    plot.title = element_text(hjust = 0.5),
+    plot.title = element_text(hjust = 0.5,
+                              face = "bold"),
+    axis.title.y = element_text(
+      face = "bold",
+      margin = margin(r = 15)
+    ),
+    axis.title.x = element_text(
+      face = "bold",
+      margin = margin(t = 15)),
     legend.position = "none"
-  )
+  ) 
 
-#Create graph for sex serelogical differences (ANA, C3, seperately)
+#Create graph for sex serelogical differences (ANA, C3)
 
 ggplot(serology.long,
        aes(x = Marker,
            y = Percent,
            fill = Gender)
        )+
-  geom_col(position = "dodge")+
+  geom_col(
+    width = 0.6,
+    position = position_dodge(width = 1))+
+  scale_fill_manual(
+    values = c(
+      "Female" = "plum3",
+      "Male" = "olivedrab3"
+    ),
+    name = NULL
+    )+
+  scale_y_continuous(
+    breaks = seq(0,60, by = 10)
+  )+
+  scale_x_discrete(
+    labels = c(
+      "ANA_Negative" = "ANA Negative",
+      "C3_Negative" = "C3 Negative"
+    )
+  )+
     labs(
-      title = "Serologic Negativity by Gender",
-      x = "Serologic Marker",
+      title = "Negative ANA and C3 By Gender",
+      x = "Blood Marker",
       y = "Percent Negative (%)") +
   theme_minimal()+
   theme(plot.title = element_text(
     hjust = 0.5, 
-    face = "bold")
+    face = "bold",
+    margin = margin(b = 15)),
+    
+    axis.title.y = element_text(
+      face = "bold",
+      margin = margin(r = 15)
+    ),
+    axis.title.x = element_text(
+      face = "bold",
+      margin = margin(t = 15)
+    ),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
   )
   
-
 #Create df and graph for sex serelogical differences (ALl negative) 
 
 comp.neg.df <- serology.comparison.df |>
@@ -259,39 +275,103 @@ ggplot(
   fill = Gender
   )
 ) +
-  geom_col() +
+  geom_col(width = 0.6) +
+  scale_fill_manual(
+    values = c(
+      "Female" = "plum3",
+      "Male" = "olivedrab3"
+    )
+  )+
   geom_text(
-    aes(label = round(Both_Negative, 1)),
-    vjust = -0.5
+    aes(label = paste0(round(Both_Negative, 1), "%")),
+    vjust = -0.5,
+    fontface = "bold"
   ) +
   labs(
-    title = "Complete Seronegativity by Gender",
-    x = "Gender",
-    y = "Percent Negative for ANA and C3"
+    title = "People Negative for Both ANA and C3",
+    x = "",
+    y = "Percent Negative"
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.15)),
+        breaks = seq(0,20, by = 5)
+  )+
+  theme_minimal() +
+theme(
+  plot.title = element_text(
+    hjust = 0.5,
+    face = "bold",
+    margin = margin(b = 15)
+  ),
+  axis.title.x = element_text(
+    face = "bold"
+  ),
+  axis.text.x = element_text(
+    face = "bold"
+  ),
+  axis.title.y = element_text(
+    face = "bold",
+    margin = margin(r = 15)
+  ),
+  panel.grid.major.x = element_blank(),
+  panel.grid.minor.x = element_blank(),
+  legend.position = "none"
+)
+
+#Create bar graph for females with both negative, yet still have stumptoms
+
+ggplot(
+  female.neg.w.symptom,
+  aes(x = factor(Symptom_Count))
+) +
+  annotate(
+    "rect",
+    xmin = 3.5,
+    xmax = 6.5,
+    ymin = -Inf,
+    ymax = Inf,
+    fill = "red",
+    alpha = 0.08
+  )+
+  geom_bar(
+    fill = "plum3",
+    color = "black"
+  ) +
+  geom_vline(
+    xintercept = 3.5,
+    color = "red",
+    linetype = "dashed",
+    linewidth = 1.5
+  ) +
+  annotate(
+    "label",
+    x = 5.5,
+    y = Inf,
+    label = "Women still reported at least
+    3 out of 5 symptoms",
+    vjust = 1.5,
+    fill = "white",
+    fontface = "bold"
+  ) +
+  labs(
+    title = "Symptoms in Women Negative for Both ANA and C3",
+    x = "Number of Symptoms",
+    y = "Number of Participants"
   ) +
   theme_minimal() +
   theme(
     plot.title = element_text(
       hjust = 0.5,
       face = "bold"
+    ),
+    axis.title.x = element_text(
+      face = "bold",
+      margin = margin(t = 15)
+    ),
+    axis.title.y = element_text(
+      face = "bold",
+      margin = margin(r = 15)
     )
   )
 
-#Create violin graph for females with both negative, yet symptomological positives
-
-ggplot(
-  female.neg.w.symptom,
-  aes(
-    x = "",
-    y = Symptom_Count
-  )
-)+
-  geom_violin(fill = "steelblue", alpha = 0.6)+
-  labs(
-    title = "Symptom Burden Among ANA and C3 Seronegative Females",
-    y = "Number of Symptoms",
-    x = NULL) +
-    theme_minimal()
   
-
-
