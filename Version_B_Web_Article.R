@@ -8,8 +8,6 @@ library(janitor)
 library(dplyr)
 library(tidyr)
 
-#Find the data file and read it
-read_csv("./autoimmune.csv")
 
 #Assign the data a df name (raw version)
 autoimmune.df <- read.csv("./autoimmune.csv")
@@ -90,7 +88,7 @@ female.percentage.df <- female.autoimmune.df |>
     ANA_Negative = mean(ANA == 0) * 100, 
     C3_Negative = mean(C3 == 0) * 100, 
     Both_Negative = mean(ANA == 0 &
-                           C3 == 0) *100)
+                         C3 == 0) *100)
 
 #Find percentage of ANA, C3 negative in male and both
 #and save as percentage df
@@ -120,7 +118,7 @@ demographics.df <- autoimmune.df.clean |>
     Mean_Age = mean(Age, na.rm = TRUE),
     Mean_Duration = mean(Sickness_Duration_Months, na.rm = TRUE)
   )
-
+ 
 #Join serology.df with demographic.df (sereology is on left (first) so use left_join())
 
 serology.comparison.df <- serology.comparison.df |>
@@ -169,75 +167,62 @@ female.neg.w.symptom <- female.neg.w.symptom |>
       Low.grade.fever + 
       General..unwell..feeling)
 
-#Create distribution chart to show age range across both genders 
+#Create pie chart to show age split
 #use autoimmune.clean.df because it has individual ages
 #center title using plot.title
 
-age.labels <- autoimmune.df.clean |>
-  count(Gender)
+gender.df <- autoimmune.df.clean |>
+  count(Gender)|>
+  mutate(
+    Percent = round(100 * n / sum(n), 1)
+  )
 
-ggplot(
-  autoimmune.df.clean,
-  aes(
-    x = Age,
-    fill = Gender
-  )
-) +
-  geom_histogram(bins = 30) +
-  facet_wrap(~ Gender) +
+pie.sex <- ggplot(
+  gender.df,
+  aes(x = "", y = n, fill = Gender))+
+  
+  geom_col(width = 1)+
+  coord_polar("y")+
   geom_text(
-    data = age.labels,
     aes(
-      x = 25,
-      y = Inf,
-      label = paste0("n = ", n)
+      label = paste0(Percent, "%")
     ),
-    vjust = 1.5,
-    inherit.aes = FALSE
+    position = position_stack(vjust= 0.5),
+    color = "white",
+    fontface = "bold",
+    size = 5
   )+
-  scale_fill_grey(
-    start = 0.35,
-    end = 0.7
-  ) +
-  scale_x_continuous(
-    breaks = seq(0, 100, by = 10)
-  )+
+  scale_fill_manual(values = c(
+    "Female" = "plum3",
+    "Male" = "olivedrab3"
+  ),
+  name = NULL)+
   labs(
-    x = "Age (in Years)",
-    y = "Number of Participants"
-  ) +
-  theme_minimal() +
+    title = "Participant Split by Gender")+
+  theme_void()+
   theme(
-    axis.title.y = element_text(
-      face = "bold",
-      margin = margin(r = 15)
-    ),
-    strip.text = element_text(
-      face = "bold"
-    ),
-    axis.title.x = element_text(
-      face = "bold",
-      margin = margin(t = 15)),
-    legend.position = "none"
-  )
+    plot.title = element_text(hjust = 0.5,
+                              face = "bold"))
 
 #Create graph for sex serelogical differences (ANA, C3)
 
-ggplot(serology.long,
+bar.sex.web <- ggplot(serology.long,
        aes(x = Marker,
            y = Percent,
            fill = Gender)
-)+
+       )+
   geom_col(
     width = 0.6,
     position = position_dodge(width = 1))+
-  scale_fill_grey(
-    start = 0.35,
-    end = 0.7,
+  scale_fill_manual(
+    values = c(
+      "Female" = "plum3",
+      "Male" = "olivedrab3"
+    ),
     name = NULL
-  )+
+    )+
   scale_y_continuous(
-    breaks = seq(0,60, by = 10)
+    breaks = seq(0,60, by = 5)
   )+
   scale_x_discrete(
     labels = c(
@@ -245,12 +230,17 @@ ggplot(serology.long,
       "C3_Negative" = "C3 Negative"
     )
   )+
-  labs(
-    x = "Blood Marker",
-    y = "Percent Negative (%)") +
+    labs(
+      title = "Negative for ANA and C3 by Gender",
+      x = "Blood Marker",
+      y = "Participants Negative (%)") +
   theme_minimal()+
-  theme(
-   axis.title.y = element_text(
+  theme(plot.title = element_text(
+    hjust = 0.5, 
+    face = "bold",
+    margin = margin(b = 15)),
+    
+    axis.title.y = element_text(
       face = "bold",
       margin = margin(r = 15)
     ),
@@ -261,7 +251,7 @@ ggplot(serology.long,
     panel.grid.major.x = element_blank(),
     panel.grid.minor.x = element_blank()
   )
-
+  
 #Create df and graph for sex serelogical differences (ALl negative) 
 
 comp.neg.df <- serology.comparison.df |>
@@ -270,18 +260,20 @@ comp.neg.df <- serology.comparison.df |>
     Both_Negative
   )
 
-ggplot(
+bar.sex.web.seperate <- ggplot(
   comp.neg.df,
   aes(
-    x = Gender,
-    y = Both_Negative,
-    fill = Gender
+  x = Gender,
+  y = Both_Negative,
+  fill = Gender
   )
 ) +
   geom_col(width = 0.6) +
-  scale_fill_grey(
-    start = 0.35,
-    end = 0.7
+  scale_fill_manual(
+    values = c(
+      "Female" = "plum3",
+      "Male" = "olivedrab3"
+    )
   )+
   geom_text(
     aes(label = paste0(round(Both_Negative, 1), "%")),
@@ -289,66 +281,91 @@ ggplot(
     fontface = "bold"
   ) +
   labs(
+    title = "People Negative for Both ANA and C3",
     x = "",
-    y = "Percent Negative"
+    y = "Participants Negative (%)"
   ) +
   scale_y_continuous(
     expand = expansion(mult = c(0, 0.15)),
-    breaks = seq(0,20, by = 5)
+        breaks = seq(0,20, by = 2.5)
   )+
   theme_minimal() +
-  theme(
-    axis.title.x = element_text(
-      face = "bold"
-    ),
-    axis.text.x = element_text(
-      face = "bold"
-    ),
-    axis.title.y = element_text(
-      face = "bold",
-      margin = margin(r = 15)
-    ),
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor.x = element_blank(),
-    legend.position = "none"
-  )
+theme(
+  plot.title = element_text(
+    hjust = 0.5,
+    face = "bold",
+    margin = margin(b = 15)
+  ),
+  axis.title.x = element_text(
+    face = "bold"
+  ),
+  axis.text.x = element_text(
+    face = "bold"
+  ),
+  axis.title.y = element_text(
+    face = "bold",
+    margin = margin(r = 15)
+  ),
+  panel.grid.major.x = element_blank(),
+  panel.grid.minor.x = element_blank(),
+  legend.position = "none"
+)
 
-#Violin plot for density of number of symptoms
+#Create bar graph for females with both negative, yet still have stumptoms
 
-ggplot(
+bar.symptom.female <- ggplot(
   female.neg.w.symptom,
-  aes(
-    x = "",
-    y = Symptom_Count
-  )
-)+
+  aes(x = factor(Symptom_Count))
+) +
   annotate(
     "rect",
-    xmin = -Inf,
-    xmax = Inf,
-    ymin = 3,
+    xmin = 3.5,
+    xmax = 7,
+    ymin = -Inf,
     ymax = Inf,
-    fill = "grey85",
-    alpha = 0.4
+    fill = "red",
+    alpha = 0.08
   )+
-  geom_violin(fill = "grey80", 
-              colour = "black",
-              alpha = 0.6)+
+  geom_bar(
+    fill = "plum3",
+    color = "black"
+  ) +
+  geom_vline(
+    xintercept = 3.5,
+    color = "red",
+    linetype = "dashed",
+    linewidth = 1.5
+  ) +
+  annotate(
+    "label",
+    x = 5.65,
+    y = 20,
+    label = "Women still reported 
+    at least
+    3 out of 5 symptoms",
+    vjust = 1.5,
+    fill = "white",
+    fontface = "bold"
+  ) +
   labs(
-    y = "Number of Symptoms",
-    x = NULL) +
-  theme_minimal()+
+    title = "Symptoms in Women Negative for Both ANA and C3",
+    x = "Number of Symptoms",
+    y = "Number of Participants"
+  ) +
+  theme_minimal() +
   theme(
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold"
+    ),
+    axis.title.x = element_text(
+      face = "bold",
+      margin = margin(t = 15)
+    ),
     axis.title.y = element_text(
       face = "bold",
       margin = margin(r = 15)
     )
-  )+
-  geom_hline(
-    yintercept = 3,
-    linetype = "dashed",
-    color = "black",
-    linewidth = 1.5 
   )
 
-
+    
