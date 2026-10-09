@@ -14,6 +14,8 @@ Abdullah Ragheb. (2024). Comprehensive Autoimmune Disorder Dataset [Dataset]. Ka
 <br>
 Ayano, M., & Horiuchi, T. (2023). Complement as a Biomarker for Systemic Lupus Erythematosus. Biomolecules, 13(2), 367. https://doi.org/10.3390/biom13020367
 <br>
+Fairweather, D., & Rose, N. R. (2004). Women and autoimmune diseases. Emerging infectious diseases, 10(11), 2005–2011. https://doi.org/10.3201/eid1011.040367
+<br>
 Kraev, K., Hristov, B., Uchikov, P., Kraeva, M., Basheva-Kraeva, Y., Valova, S., Koleva-Ivanova, M., Popova-Belova, S., Sandeva, M., Chakarov, D., & Geneva-Popova, M. (2024). Comprehensive Exploration of Antinuclear Antibodies (ANAs): Unveiling Clinical Significance, Associations with Cancer, and the Nuances of Differential Diagnosis in Positive ANA Patients. Diagnostics (Basel, Switzerland), 14(3), 320. https://doi.org/10.3390/diagnostics14030320 
 <br>
 Lenti, M. V., Rossi, C. M., Melazzini, F., Gastaldi, M., Bugatti, S., Rotondi, M., Bianchi, P. I., Gentile, A., Chiovato, L., Montecucco, C., Corazza, G. R., & Di Sabatino, A. (2022). Seronegative autoimmune diseases: A challenging diagnosis. Autoimmunity reviews, 21(9), 103143. https://doi.org/10.1016/j.autrev.2022.103143
